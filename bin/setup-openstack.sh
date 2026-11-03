@@ -129,6 +129,7 @@ EOF
     prompt_component "freezer" "Freezer (Backup Restore)"
     prompt_component "zaqar" "Zaqar (Messaging)"
     prompt_component "qonos" "Qonos (Scheduled Actions)"
+    prompt_component "watcher" "Watcher (Resource Optimization)"
 fi
 
 validate_ironic_dependencies
@@ -158,6 +159,7 @@ is_component_enabled "cloudkitty" && runTrackErator /opt/genestack/bin/install-c
 is_component_enabled "freezer" && runTrackErator /opt/genestack/bin/install-freezer.sh
 is_component_enabled "zaqar" && runTrackErator /opt/genestack/bin/install-zaqar.sh
 is_component_enabled "qonos" && runTrackErator /opt/genestack/bin/install-qonos.sh
+is_component_enabled "watcher" && runTrackErator /opt/genestack/bin/install-watcher.sh
 
 waitErator
 

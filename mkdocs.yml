@@ -248,6 +248,7 @@ nav:
                       - Neutron Plugin: openstack-designate-neutron.md
                   - Freezer: openstack-freezer.md
                   - Masakari: openstack-masakari.md
+                  - Watcher: openstack-watcher.md
                   - Qonos: openstack-qonos.md
                   - Zaqar: openstack-zaqar.md
                   - Trove:

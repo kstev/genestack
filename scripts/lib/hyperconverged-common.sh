@@ -690,7 +690,7 @@ function writeEnvoyGatewayConfig() {
     local external_routes=(
         barbican blazar cinder cloudformation cloudkitty designate freezer glance
         gnocchi heat ironic keystone magnum manila masakari metadata neutron nova
-        novnc octavia placement skyline trove zaqar
+        novnc octavia placement skyline trove watcher zaqar
     )
     local route
 
@@ -804,6 +804,7 @@ function writeServiceHelmOverrides() {
       "${config_base}/octavia" \
       "${config_base}/placement" \
       "${config_base}/trove" \
+      "${config_base}/watcher" \
       "${config_base}/zaqar"
 
     if [ ! -f "${config_base}/envoyproxy-gateway/envoyproxy-gateway-helm-overrides.yaml" ]; then
@@ -1277,6 +1278,15 @@ conf:
 EOF
     fi
 
+    if [ ! -f "${config_base}/watcher/watcher-helm-overrides.yaml" ]; then
+        cat > "${config_base}/watcher/watcher-helm-overrides.yaml" <<EOF
+---
+pod:
+  resources:
+    enabled: false
+EOF
+    fi
+
     if [ ! -f "${config_base}/manila/manila-helm-overrides.yaml" ]; then
         cat > "${config_base}/manila/manila-helm-overrides.yaml" <<EOF
 ---
@@ -1493,6 +1503,16 @@ endpoints:
       public:
         tls: {}
         host: masakari.${gateway_domain}
+    port:
+      api:
+        public: 443
+    scheme:
+      public: https
+  infra_optim:
+    host_fqdn_override:
+      public:
+        tls: {}
+        host: watcher.${gateway_domain}
     port:
       api:
         public: 443

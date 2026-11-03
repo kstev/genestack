@@ -1,0 +1,8 @@
+---
+sortOptions:
+  order: fifo
+resources:
+  - watcher-mariadb-database.yaml
+  - watcher-rabbitmq-queue.yaml
+  - all.yaml
+  - hpa-watcher-api.yaml

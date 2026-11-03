@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Add OpenStack Watcher (resource optimization) as an optional service.
+    Enable it with ``watcher: true`` in ``openstack-components.yaml`` or run
+    ``/opt/genestack/bin/install-watcher.sh``. The database and RabbitMQ
+    resources are managed by the mariadb and rabbitmq operators, and service
+    secrets are created by the installer.

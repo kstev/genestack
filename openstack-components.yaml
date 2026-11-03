@@ -24,4 +24,5 @@ components:
   skyline: true
   swift: false
   trove: false
+  watcher: false
   zaqar: false

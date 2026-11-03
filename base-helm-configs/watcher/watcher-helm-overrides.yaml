@@ -1,0 +1,172 @@
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+# NOTE: genestack-images does not publish a watcher image yet, so the
+# service images come from upstream openstack-helm (airshipit).
+images:
+  tags:
+    watcher_api: "quay.io/airshipit/watcher:2026.1-ubuntu_noble"
+    watcher_db_sync: "quay.io/airshipit/watcher:2026.1-ubuntu_noble"
+    watcher_decision_engine: "quay.io/airshipit/watcher:2026.1-ubuntu_noble"
+    watcher_applier: "quay.io/airshipit/watcher:2026.1-ubuntu_noble"
+    bootstrap: "ghcr.io/rackerlabs/genestack-images/openstack-client:2026.1-latest"
+    db_drop: "ghcr.io/rackerlabs/genestack-images/openstack-client:2026.1-latest"
+    db_init: "ghcr.io/rackerlabs/genestack-images/openstack-client:2026.1-latest"
+    dep_check: "ghcr.io/rackerlabs/genestack-images/kubernetes-entrypoint:latest"
+    ks_endpoints: "ghcr.io/rackerlabs/genestack-images/openstack-client:2026.1-latest"
+    ks_service: "ghcr.io/rackerlabs/genestack-images/openstack-client:2026.1-latest"
+    ks_user: "ghcr.io/rackerlabs/genestack-images/openstack-client:2026.1-latest"
+  pull_policy: "IfNotPresent"
+
+# The database and RabbitMQ user/vhost come from mariadb-operator and
+# rabbitmq-operator resources (base-kustomize/watcher), so the chart's
+# db-init and rabbit-init jobs are disabled and removed from dependencies.
+dependencies:
+  static:
+    api:
+      jobs:
+        - watcher-db-sync
+        - watcher-ks-user
+        - watcher-ks-endpoints
+    decision_engine:
+      jobs:
+        - watcher-db-sync
+        - watcher-ks-user
+        - watcher-ks-endpoints
+    applier:
+      jobs:
+        - watcher-db-sync
+        - watcher-ks-user
+        - watcher-ks-endpoints
+    db_sync:
+      jobs: null
+
+pod:
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 3
+        pod_replacement_strategy: RollingUpdate
+        rolling_update:
+          max_unavailable: 20%
+          max_surge: 3
+    disruption_budget:
+      api:
+        min_available: 0
+  resources:
+    enabled: false
+  replicas:
+    api: 1
+    decision_engine: 1
+    applier: 1
+
+endpoints:
+  identity:
+    port:
+      api:
+        default: 5000
+        internal: 5000
+        public: 80
+        service: 5000
+  infra_optim:
+    port:
+      api:
+        default: 9322
+        internal: 9322
+        public: 80
+        service: 9322
+  oslo_db:
+    host_fqdn_override:
+      default: mariadb-cluster-primary.openstack.svc.cluster.local
+    hosts:
+      default: mariadb-cluster-primary
+  oslo_cache:
+    host_fqdn_override:
+      default: memcached.openstack.svc.cluster.local
+    hosts:
+      default: memcached
+    statefulset:
+      name: memcached-memcached
+      replicas: 3
+  oslo_messaging:
+    host_fqdn_override:
+      default: rabbitmq.openstack.svc.cluster.local
+    hosts:
+      default: rabbitmq-nodes
+
+conf:
+  watcher:
+    keystone_authtoken:
+      auth_type: password
+      auth_version: v3
+      service_type: infra-optim
+      memcache_security_strategy: ENCRYPT
+      service_token_roles: service
+      service_token_roles_required: true
+    # Credentials Watcher uses to call other services. Password is set from
+    # the watcher-admin secret by bin/install-watcher.sh.
+    watcher_clients_auth:
+      auth_type: password
+      auth_url: http://keystone-api.openstack.svc.cluster.local:5000/v3
+      username: watcher
+      project_name: service
+      user_domain_name: service
+      project_domain_name: service
+    # Keep service-to-service traffic on internal endpoints.
+    nova:
+      valid_interfaces: internal
+      region_name: RegionOne
+    placement_client:
+      interface: internal
+      region_name: RegionOne
+    cinder_client:
+      endpoint_type: internalURL
+      region_name: RegionOne
+    ironic_client:
+      endpoint_type: internalURL
+      region_name: RegionOne
+    keystone_client:
+      interface: internal
+      region_name: RegionOne
+    gnocchi_client:
+      endpoint_type: internal
+      region_name: RegionOne
+    database:
+      connection_debug: 0
+      connection_recycle_time: 600
+      connection_trace: true
+      mysql_sql_mode: {}
+      use_db_reconnect: true
+      pool_timeout: 60
+      max_retries: -1
+    oslo_messaging_rabbit:
+      amqp_durable_queues: false
+      rabbit_ha_queues: false
+      rabbit_quorum_queue: true
+      rabbit_transient_quorum_queue: false
+      use_queue_manager: false
+      rabbit_stream_fanout: false
+      rabbit_interval_max: 10
+      # heartbeat_timeout / heartbeat_rate / 2.0 = 30 / 3 / 2.0 = 5
+      heartbeat_rate: 3
+      heartbeat_timeout_threshold: 60
+      kombu_reconnect_delay: 0.5
+
+manifests:
+  job_bootstrap: false
+  job_db_init: false
+  job_db_drop: false
+  job_image_repo_sync: false
+  job_rabbit_init: false
+  pod_rally_test: false
+  network_policy: false

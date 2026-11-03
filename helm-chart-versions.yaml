@@ -44,4 +44,5 @@ charts:
   tempo: 1.24.4
   topolvm: 16.1.1
   trove: 2026.1.7+789d868ff
+  watcher: 2026.1.53+365fe1abd
   zaqar: 2026.1.8+a659ab8a2
