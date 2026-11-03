@@ -183,7 +183,9 @@ conf:
       # https://review.opendev.org/c/openstack/oslo.messaging/+/866617
       kombu_reconnect_delay: 0.5
     taskflow:
-      connection: null
+      # Must be "" (not null): the chart only derives the DB URI when the key
+      # exists and is empty. null drops the key and db-sync fails.
+      connection: ""
   masakarimonitors:
     DEFAULT:
       debug: false
